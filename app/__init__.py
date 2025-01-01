@@ -13,6 +13,10 @@ from config import Config
 def get_locale():
     return request.accept_languages.best_match(current_app.config['LANGUAGES'])
 
+
+
+
+
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
