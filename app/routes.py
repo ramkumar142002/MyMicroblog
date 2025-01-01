@@ -1,12 +1,12 @@
 from flask import flash, redirect, render_template, url_for, request
 from app import app
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from app.auth.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, Post
 from urllib.parse import urlparse
 from app import db
-from app.forms import ResetPasswordRequestForm
-from app.email import send_password_reset_email
+from app.auth.forms import ResetPasswordRequestForm
+from app.auth.email import send_password_reset_email
 from guess_language import guess_language
 from datetime import datetime
 from flask import g
@@ -30,7 +30,7 @@ def index():
         return redirect(url_for('index'))
     page = request.args.get('page', 1, type=int)
     posts = current_user.followed_posts().paginate(
-        page=page, per_page=app.config['POSTS_PER_PAGE'], error_out=False)
+        page=page, per_page=current_app.config['POSTS_PER_PAGE'], error_out=False)
     next_url = url_for('index', page=posts.next_num) \
         if posts.has_next else None
     prev_url = url_for('index', page=posts.prev_num) \
@@ -86,7 +86,7 @@ def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     page = request.args.get('page', 1, type=int)
     posts = user.posts.order_by(Post.timestamp.desc()).paginate(
-        page=page, per_page=app.config['POSTS_PER_PAGE'], error_out=False)
+        page=page, per_page=current_app.config['POSTS_PER_PAGE'], error_out=False)
     next_url = url_for('user', username=user.username, page=posts.next_num) \
         if posts.has_next else None
     prev_url = url_for('user', username=user.username, page=posts.prev_num) \
@@ -110,7 +110,7 @@ def edit_profile():
         form.about_me.data = current_user.about_me
     return render_template("edit_profile.html", title="Edit Profile", form=form)
 
-from app.forms import EmptyForm
+from app.auth.forms import EmptyForm
 # ...
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
@@ -155,7 +155,7 @@ def unfollow(username):
 def explore():
     page = request.args.get('page', 1, type=int)
     posts = Post.query.order_by(Post.timestamp.desc()).paginate(
-        page=page, per_page=app.config['POSTS_PER_PAGE'], error_out=False)
+        page=page, per_page=current_app.config['POSTS_PER_PAGE'], error_out=False)
     next_url = url_for('explore', page=posts.next_num) \
         if posts.has_next else None
     prev_url = url_for('explore', page=posts.prev_num) \
