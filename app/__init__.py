@@ -4,6 +4,7 @@ import os
 
 from elasticsearch import Elasticsearch
 from flask import Flask, request, current_app
+from flask.cli import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -27,6 +28,10 @@ moment = Moment()
 babel = Babel()
 
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir,'.env'))
+
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -38,7 +43,9 @@ def create_app(config_class=Config):
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
 
-    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']],
+    http_auth=(os.environ.get('elastic_username'),os.environ.get('elastic_password') )
+    ,verify_certs=False) \
         if app.config['ELASTICSEARCH_URL'] else None
 
     from app.errors import bp as errors_bp
