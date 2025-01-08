@@ -112,17 +112,19 @@ class User(UserMixin, db.Model):
 def load_user(id):
     return db.session.get(User, int(id))
 
+
 class SearchableMixin(object):
     @classmethod
     def search(cls, expression, page, per_page):
         ids, total = query_index(cls.__tablename__, expression, page, per_page)
         if total == 0:
-            return cls.query.filter_by(id=0), 0
+            return [], 0
         when = []
         for i in range(len(ids)):
             when.append((ids[i], i))
-        return cls.query.filter(cls.id.in_(ids)).order_by(
-            db.case(*when, value=cls.id)), total
+        query = sa.select(cls).where(cls.id.in_(ids)).order_by(
+            db.case(*when, value=cls.id))
+        return db.session.scalars(query), total
 
     @classmethod
     def before_commit(cls, session):
@@ -150,8 +152,10 @@ class SearchableMixin(object):
         for obj in cls.query:
             add_to_index(cls.__tablename__, obj)
 
+
 db.event.listen(db.session, 'before_commit', SearchableMixin.before_commit)
 db.event.listen(db.session, 'after_commit', SearchableMixin.after_commit)
+
 
 class Post(SearchableMixin, db.Model):
     __searchable__ = ['body']
